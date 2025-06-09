@@ -10,14 +10,4 @@ class UserEdit(BaseModel):
     calories: int | None = None
     calories_limit: int | None = None
 
-class Ingredient(BaseModel): 
-    name: str
-    calories: int
-
-class ParsedListIngredient(BaseModel):
-    ingredients: list[Ingredient]
-
-    @property
-    def calories(self):
-        return sum(ingredient.calories for ingredient in self.ingredients)
     
