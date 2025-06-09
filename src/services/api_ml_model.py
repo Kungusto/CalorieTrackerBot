@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 import openai
 
 import sys
@@ -33,6 +34,7 @@ class CalorieCounterGPT:
         ...
         ]
         Внимательно оцени состав и калорийность каждого ингредиента на фото, основываясь на визуальных характеристиках. Постарайся быть максимально точным при расчете калорийности, учитывая примерный вес каждого ингредиента на изображении. 
+        Если ты видишь, что тарелок несколько, либо на фото нельзя распознать еду, выдавай ошибку в JSON. Формат ошибки: {"status": "error", "code": <код ошибки>}. Коды ошибок: 0 - нельзя распознать блюдо, 1 - несколько блюд  нужно вернуть в формате **строго JSON**, без косых апострофов. 
         """
 
         user_content = [
@@ -55,15 +57,29 @@ class CalorieCounterGPT:
 
         text = response.choices[0].message.content
 
-        ingreadients_text = self.validate_json_simple(text)
-
-        ingreadients = json.loads(ingreadients_text)
+        ingreadients_text = self.validate_json(text)
+        try:
+            ingreadients = json.loads(ingreadients_text)
+        except Exception as ex:
+            logging.error(f"Произошла ошибка: {ex}\nТекст:{text}")
+        if not isinstance(ingreadients, list):
+            if ingreadients.get("code") == 1:
+                return "На фото несколько блюд"
+            else:
+                return "Невозможно распознать еду на изображении"
         list_ingreadients = []
         for ingredient in ingreadients:
             list_ingreadients.append(Ingredient(**ingredient))
         return ParsedListIngredient(ingredients=list_ingreadients)
+        
 
-    def validate_json_simple(self, text):
+    def validate_json(self, text):
+        text = text.strip()
+        if text.startswith("```json"):
+            text = text[len("```json"):].strip()
+        if text.endswith("```"):
+            text = text[: -len("```")].strip()
+
         start_index = text.find("[")
         end_index = text.rfind("]")
 
@@ -72,3 +88,4 @@ class CalorieCounterGPT:
 
         text = text[start_index : end_index + 1]
         return text
+
