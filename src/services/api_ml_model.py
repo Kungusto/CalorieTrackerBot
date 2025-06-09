@@ -12,12 +12,11 @@ from src.config import settings
 from src.schemas.photos import Ingredient, ParsedListIngredient
 
 
-
-class CalorieCounterGPT: 
+class CalorieCounterGPT:
     def encode_image(self, image_path):
         with open(image_path, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
-    
+
     def analyze_food(self, file):
         openai.api_key = settings.API_KEY_GPT
 
@@ -38,24 +37,25 @@ class CalorieCounterGPT:
 
         user_content = [
             {"type": "text", "text": "Фото блюда ниже."},
-            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+            },
         ]
-        
-        response = openai.chat.completions.create(  
+
+        response = openai.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content}
+                {"role": "user", "content": user_content},
             ],
             temperature=0,
-            max_tokens=500
+            max_tokens=500,
         )
 
         text = response.choices[0].message.content
 
-        ingreadients_text = (
-            self.validate_json_simple(text)
-        )
+        ingreadients_text = self.validate_json_simple(text)
 
         ingreadients = json.loads(ingreadients_text)
         list_ingreadients = []
@@ -70,5 +70,5 @@ class CalorieCounterGPT:
         if start_index == -1 or end_index == -1 or end_index < start_index:
             return text
 
-        text = text[start_index:end_index + 1]
+        text = text[start_index : end_index + 1]
         return text

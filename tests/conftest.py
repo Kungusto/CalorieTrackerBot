@@ -17,18 +17,18 @@ from src.config import Settings
 from src.database import Base, engine_null_pull
 from src.utils.db_manager import get_db_manager_null_pull
 
-settings = Settings() 
+settings = Settings()
+
 
 @pytest.fixture(autouse=True)
 async def setup_database():
     assert settings.MODE
-    async with engine_null_pull.begin() as conn :
+    async with engine_null_pull.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
 
 @pytest.fixture(scope="function")
-async def db(): 
+async def db():
     async for db in get_db_manager_null_pull():
         yield db
-

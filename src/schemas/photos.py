@@ -1,8 +1,10 @@
 from pydantic import BaseModel
 
-class Ingredient(BaseModel): 
+
+class Ingredient(BaseModel):
     name: str
     calories: int
+
 
 class ParsedListIngredient(BaseModel):
     ingredients: list[Ingredient]

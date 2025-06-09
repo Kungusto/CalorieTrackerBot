@@ -17,8 +17,10 @@ engine = create_async_engine(url=settings.DB_URL)
 engine_null_pull = create_async_engine(url=settings.DB_URL, poolclass=NullPool)
 
 async_session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
-async_session_maker_null_pull = async_sessionmaker(bind=engine_null_pull, expire_on_commit=False)
+async_session_maker_null_pull = async_sessionmaker(
+    bind=engine_null_pull, expire_on_commit=False
+)
 
-class Base(DeclarativeBase) :
+
+class Base(DeclarativeBase):
     pass
-
