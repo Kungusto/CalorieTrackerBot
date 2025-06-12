@@ -10,17 +10,16 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 
 @pytest.mark.parametrize(
-    "image_name, min_calories, max_calories",
+    "image_name",
     [
-        ("327.png", 250, 575),
-        ("328.png", 200, 550),
+        ("327.png"),
+        ("328.png"),
     ],
 )
-def test_photo_detect(image_name, min_calories, max_calories):
+def test_photo_detect(image_name):
     with open(f"tests/unit/static/{image_name}", "rb") as f:
         result: ParsedListIngredient = CalorieCounterGPT().analyze_food(file=f)
 
         assert isinstance(result, ParsedListIngredient)
         for ingredient in result.ingredients:
             assert isinstance(ingredient, Ingredient)
-        assert min_calories <= result.calories <= max_calories

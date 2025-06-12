@@ -5,7 +5,8 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from src.utils.db_manager import get_db_manager
-from src.schemas.users import User, UserAdd, UserEdit, UserEditCalories, UserEditLimits
+from src.schemas.users import User, UserAdd, UserEdit, UserEditLimits
+from src.exceptions.exceptions import UnrealisticCalorieValue
 
 
 class UserFSM(StatesGroup):
@@ -32,7 +33,17 @@ async def cmd_start(message: Message, state: FSMContext):
 
 @router.message(UserFSM.input_calories)
 async def testing(message: Message, state: FSMContext):
-    calories = int(message.text)
+    try:
+        calories = int(message.text)
+        if not 0 < calories < 10_000:
+            raise UnrealisticCalorieValue
+    except ValueError:
+        await message.answer("Введите число!")
+        return
+    except UnrealisticCalorieValue as ex:
+        await message.answer(f"{ex.detail}")
+        return
+        
     async for db in get_db_manager():
         await db.users.update_user_data(
             user_id=str(message.from_user.id), data=UserEditLimits(calories_limit=calories)
@@ -58,11 +69,12 @@ async def check_date_and_get_user(db, user_id):
             ),
             user_id=user_id
         )
+        user.calories = 0
     await db.commit()
     return user
 
 @router.message(Command("remain"))
-async def get_remain(message: Message, state: FSMContext):
+async def get_remain(message: Message):
     async for db in get_db_manager() :
         user_id = str(message.from_user.id)
         user: User = await check_date_and_get_user(db, user_id=user_id)

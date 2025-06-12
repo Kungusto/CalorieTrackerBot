@@ -4,9 +4,9 @@ from datetime import date, datetime
 
 class User(BaseModel):
     user_id: str
+    calories: int
     updated_at: datetime 
     last_date: date 
-    calories: int
     calories_limit: int
 
 

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from aiogram import F, Dispatcher, Bot, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -7,7 +7,6 @@ import asyncio
 import logging
 import sys
 from io import BytesIO
-from aiogram import types
 from pathlib import Path
 
 # добавление src в поле видимости
@@ -181,7 +180,7 @@ async def confirm_all(callback: CallbackQuery, state: FSMContext):
     delta_calories = ingredients_sum(ingredients)
     async for db in get_db_manager():
         user_data = await db.users.get_user(user_id=user_id)
-        data_to_add =  {"calories": (user_data.calories + delta_calories)}
+        data_to_add =  {"calories": (user_data.calories + delta_calories), "updated_at": datetime.now()}
         if user_data.last_date != date.today() :
             data_to_add["calories"] = 0
         await db.users.update_user_data(

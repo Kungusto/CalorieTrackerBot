@@ -31,10 +31,8 @@ class UsersRepository:
             .returning(UsersORM)
         )
         model = await self.session.execute(update_stmt)
-        return [
-            User.model_validate(result, from_attributes=True)
-            for result in model.scalars().all()
-        ]
+        result = model.scalar_one() 
+        return User.model_validate(result, from_attributes=True)
 
     async def is_new(self, user_id):
         query = select(UsersORM).filter_by(user_id=user_id)
