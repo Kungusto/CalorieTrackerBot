@@ -1,0 +1,13 @@
+services:
+  food_bot_service:
+    container_name: food_bot
+    env_file:
+      - .env
+    networks:
+      - myNetwork
+    build:
+      context: .
+
+networks:
+  myNetwork:
+    external: true

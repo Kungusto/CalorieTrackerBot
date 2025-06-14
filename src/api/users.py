@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from src.utils.db_manager import get_db_manager
 from src.schemas.users import User, UserAdd, UserEdit, UserEditLimits
-from src.exceptions.exceptions import UnrealisticCalorieValue
+from src.exceptions.exceptions import UnrealisticCalorieValueException, NotRegistratedException
 
 
 class UserFSM(StatesGroup):
@@ -36,18 +36,24 @@ async def testing(message: Message, state: FSMContext):
     try:
         calories = int(message.text)
         if not 0 < calories < 10_000:
-            raise UnrealisticCalorieValue
+            raise UnrealisticCalorieValueException
     except ValueError:
         await message.answer("Введите число!")
         return
-    except UnrealisticCalorieValue as ex:
+    except TypeError:
+        await message.answer("Введите число!")
+        return
+    except UnrealisticCalorieValueException as ex:
         await message.answer(f"{ex.detail}")
         return
-        
     async for db in get_db_manager():
-        await db.users.update_user_data(
-            user_id=str(message.from_user.id), data=UserEditLimits(calories_limit=calories)
-        )
+        try:
+            await db.users.update_user_data(
+                user_id=str(message.from_user.id), data=UserEditLimits(calories_limit=calories)
+            )
+        except NotRegistratedException as ex:
+            await message.answer(ex.detail)
+            return
         await db.commit()
         await message.answer("Дневной лимит успешно обновлен")
         await state.clear()
@@ -77,7 +83,10 @@ async def check_date_and_get_user(db, user_id):
 async def get_remain(message: Message):
     async for db in get_db_manager() :
         user_id = str(message.from_user.id)
-        user: User = await check_date_and_get_user(db, user_id=user_id)
+        try:
+            user: User = await check_date_and_get_user(db, user_id=user_id)
+        except NotRegistratedException as ex:
+            await message.answer(ex.detail)
         remain = user.calories_limit - user.calories
 
     if remain > 0:

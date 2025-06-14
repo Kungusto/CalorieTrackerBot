@@ -20,6 +20,7 @@ from src.database import Base, engine
 from src.models import *
 from src.config import settings
 from src.api.users import router as user_router
+from src.exceptions.exceptions import NotRegistratedException
 
 dp = Dispatcher()
 bot = Bot(token=settings.API_TOKEN_TG)
@@ -73,7 +74,11 @@ def ingredients_sum(ingredients: list):
 
 @photo_router.message(UserFSM.send_photo)
 async def get_file_from_message(message: Message, state: FSMContext):
-    photo = message.photo[-1]
+    try:
+        photo = message.photo[-1]
+    except TypeError:
+        await message.answer("Пришлите фото!")
+        return
     file_id = photo.file_id
     file = await message.bot.get_file(file_id)
     file_content = await message.bot.download_file(file.file_path)
@@ -146,6 +151,9 @@ async def change_calories_finish(message: Message, state: FSMContext):
     except ValueError:
         await message.answer("Введите число!")
         return
+    except TypeError:
+        await message.answer("Введите число!")
+        return
     await state.set_state(None)
     if "edit_message_id" in data:
         await message.bot.edit_message_text(
@@ -179,7 +187,11 @@ async def confirm_all(callback: CallbackQuery, state: FSMContext):
     user_id = str(callback.from_user.id)
     delta_calories = ingredients_sum(ingredients)
     async for db in get_db_manager():
-        user_data = await db.users.get_user(user_id=user_id)
+        try:
+            user_data = await db.users.get_user(user_id=user_id)
+        except NotRegistratedException as ex:
+            await callback.message.answer(ex.detail)
+            return 
         data_to_add =  {"calories": (user_data.calories + delta_calories), "updated_at": datetime.now()}
         if user_data.last_date != date.today() :
             data_to_add["calories"] = 0
